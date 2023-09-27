@@ -39,7 +39,7 @@ type Account struct {
 	DaytradeCount         int64
 	LastMaintenanceMargin decimal.Decimal
 	DaytradingBuyingPower decimal.Decimal
-	RegtBuyingPower       string
+	RegtBuyingPower       decimal.Decimal
 	CreatedAt             time.Time
 	UpdatedAt             time.Time
 	DeletedAt             gorm.DeletedAt
@@ -73,7 +73,7 @@ func getAccount(client alpaca.Client, db gorm.DB) {
 		DaytradeCount:         acct.DaytradeCount,
 		LastMaintenanceMargin: acct.LastMaintenanceMargin,
 		DaytradingBuyingPower: acct.DaytradingBuyingPower,
-		RegtBuyingPower:       acct.RegTBuyingPower.String(),
+		RegtBuyingPower:       acct.RegTBuyingPower,
 		CreatedAt:             acct.CreatedAt,
 		UpdatedAt:             time.Now(),
 	}
