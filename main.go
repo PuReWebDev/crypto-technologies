@@ -140,6 +140,35 @@ func prepAlpaca() alpaca.Client {
 	return client
 }
 
+type Order struct {
+	gorm.Model
+	OrderId        string
+	ClientOrderId  string
+	CreatedAt      string
+	UpdatedAt      string
+	SubmittedAt    string
+	FilledAt       string
+	ExpiredAt      string
+	CanceledAt     string
+	FailedAt       string
+	ReplacedAt     string
+	ReplacedBy     string
+	Replaces       string
+	AssetId        string
+	Symbol         string
+	AssetClass     string
+	Notional       string
+	Qty            string
+	FilledQty      string
+	FilledAvgPrice string
+	OrderType      string
+	Type           string
+	Side           string
+	TimeInForce    string
+	LimitPrice     string
+	Status         string
+}
+
 func placeOrder(client alpaca.Client, db gorm.DB) (alpaca.Order, error) {
 	symbol := "BTC/USD"
 	qty := decimal.NewFromInt(1)
