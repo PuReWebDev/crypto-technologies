@@ -139,3 +139,29 @@ func prepAlpaca() alpaca.Client {
 
 	return client
 }
+
+func placeOrder(client alpaca.Client, db gorm.DB) (alpaca.Order, error) {
+	symbol := "BTC/USD"
+	qty := decimal.NewFromInt(1)
+	side := alpaca.Side("buy")
+	orderType := alpaca.OrderType("market")
+	timeInForce := alpaca.TimeInForce("day")
+
+	// Placing an order with the parameters set previously
+	order, err := client.PlaceOrder(alpaca.PlaceOrderRequest{
+		AssetKey:    &symbol,
+		Qty:         &qty,
+		Side:        side,
+		Type:        orderType,
+		TimeInForce: timeInForce,
+	})
+	if err != nil {
+		// Print error
+		fmt.Printf("Failed to place order: %v\n", err)
+	} else {
+		// Print resulting order object
+		fmt.Printf("Order succesfully sent:\n%+v\n", *order)
+	}
+
+	return *order, err
+}
