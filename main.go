@@ -11,40 +11,38 @@ import (
 	"github.com/shopspring/decimal"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
-	"gorm.io/gorm/clause"
 )
 
 type Account struct {
 	gorm.Model
-	ID                      uint `gorm:"primaryKey"`
-	AccountID               string
-	account_blocked         bool
-	account_number          string
-	crypto_status           string
-	currency                string
-	cash                    decimal.Decimal
-	portfolio_value         decimal.Decimal
-	pattern_day_trader      bool
-	trading_blocked         bool
-	transfers_blocked       bool
-	short_market_value      decimal.Decimal
-	equity                  decimal.Decimal
-	last_equity             decimal.Decimal
-	multiplier              string
-	buying_power            decimal.Decimal
-	shorting_enabled        bool
-	long_market_value       decimal.Decimal
-	initial_margin          decimal.Decimal
-	maintenance_margin      decimal.Decimal
-	cash_withdrawable       decimal.Decimal
-	daytrade_count          int64
-	last_maintenance_margin decimal.Decimal
-	daytrading_buying_power decimal.Decimal
-	regt_buying_power       decimal.Decimal
-	created_at              time.Time
-	CreatedAt               time.Time
-	UpdatedAt               time.Time
-	DeletedAt               gorm.DeletedAt `gorm:"index"`
+	ID                    uint
+	AccountID             string
+	AccountBlocked        bool
+	AccountNumber         string
+	crypto_status         string
+	currency              string
+	cash                  decimal.Decimal
+	PortfolioValue        decimal.Decimal
+	PatternDayTrader      bool
+	TradingBlocked        bool
+	TransfersBlocked      bool
+	ShortMarketValue      decimal.Decimal
+	Equity                decimal.Decimal
+	LastEquity            decimal.Decimal
+	Multiplier            string
+	BuyingPower           decimal.Decimal
+	ShortingEnabled       bool
+	LongMarketValue       decimal.Decimal
+	InitialMargin         decimal.Decimal
+	MaintenanceMargin     decimal.Decimal
+	CashWithdrawable      decimal.Decimal
+	DaytradeCount         int64
+	LastMaintenanceMargin decimal.Decimal
+	DaytradingBuyingPower decimal.Decimal
+	RegtBuyingPower       string
+	CreatedAt             time.Time
+	UpdatedAt             time.Time
+	DeletedAt             gorm.DeletedAt
 }
 
 func getAccount(client alpaca.Client, db gorm.DB) {
@@ -52,33 +50,32 @@ func getAccount(client alpaca.Client, db gorm.DB) {
 	acct, err := client.GetAccount()
 
 	var account Account = Account{
-		AccountID:               acct.ID,
-		account_blocked:         acct.AccountBlocked,
-		account_number:          acct.AccountNumber,
-		portfolio_value:         acct.PortfolioValue,
-		crypto_status:           acct.Status,
-		currency:                acct.Currency,
-		cash:                    acct.Cash,
-		pattern_day_trader:      acct.PatternDayTrader,
-		trading_blocked:         acct.TradingBlocked,
-		transfers_blocked:       acct.TransfersBlocked,
-		short_market_value:      acct.ShortMarketValue,
-		equity:                  acct.Equity,
-		last_equity:             acct.LastEquity,
-		multiplier:              acct.Multiplier,
-		buying_power:            acct.BuyingPower,
-		shorting_enabled:        acct.ShortingEnabled,
-		long_market_value:       acct.LongMarketValue,
-		initial_margin:          acct.InitialMargin,
-		maintenance_margin:      acct.MaintenanceMargin,
-		cash_withdrawable:       acct.CashWithdrawable,
-		daytrade_count:          acct.DaytradeCount,
-		last_maintenance_margin: acct.LastMaintenanceMargin,
-		daytrading_buying_power: acct.DaytradingBuyingPower,
-		regt_buying_power:       acct.RegTBuyingPower,
-		created_at:              acct.CreatedAt,
-		CreatedAt:               time.Now(),
-		UpdatedAt:               time.Now(),
+		AccountID:             acct.ID,
+		AccountBlocked:        acct.AccountBlocked,
+		AccountNumber:         acct.AccountNumber,
+		PortfolioValue:        acct.PortfolioValue,
+		crypto_status:         acct.Status,
+		currency:              acct.Currency,
+		cash:                  acct.Cash,
+		PatternDayTrader:      acct.PatternDayTrader,
+		TradingBlocked:        acct.TradingBlocked,
+		TransfersBlocked:      acct.TransfersBlocked,
+		ShortMarketValue:      acct.ShortMarketValue,
+		Equity:                acct.Equity,
+		LastEquity:            acct.LastEquity,
+		Multiplier:            acct.Multiplier,
+		BuyingPower:           acct.BuyingPower,
+		ShortingEnabled:       acct.ShortingEnabled,
+		LongMarketValue:       acct.LongMarketValue,
+		InitialMargin:         acct.InitialMargin,
+		MaintenanceMargin:     acct.MaintenanceMargin,
+		CashWithdrawable:      acct.CashWithdrawable,
+		DaytradeCount:         acct.DaytradeCount,
+		LastMaintenanceMargin: acct.LastMaintenanceMargin,
+		DaytradingBuyingPower: acct.DaytradingBuyingPower,
+		RegtBuyingPower:       acct.RegTBuyingPower.String(),
+		CreatedAt:             acct.CreatedAt,
+		UpdatedAt:             time.Now(),
 	}
 
 	if err != nil {
@@ -89,12 +86,10 @@ func getAccount(client alpaca.Client, db gorm.DB) {
 		fmt.Printf("Account ID: %+v\n", acct.ID)
 		fmt.Printf("Account: %+v\n", *acct)
 
-		// Create or update the record
-		var queryResult = db.Clauses(clause.OnConflict{
-			UpdateAll: true,
-		}).Create(&account)
+		// FirstOrCreate
+		result := db.Where(Account{AccountID: account.AccountID}).FirstOrCreate(&account)
 
-		fmt.Printf("Query Result: %+v\n", queryResult)
+		fmt.Printf("Query Result: %+v\n", result)
 	}
 }
 
