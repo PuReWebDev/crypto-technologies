@@ -102,6 +102,7 @@ func main() {
 	getAccount(client, *db)
 	placeOrder(client, *db)
 	listPositions(client, *db)
+	getAsset(client)
 }
 
 func loadEnvironment() *gorm.DB {
@@ -251,4 +252,16 @@ func listPositions(client alpaca.Client, db gorm.DB) {
 			fmt.Printf("Position %v: %+v\n", idx, position)
 		}
 	}
+}
+
+func getAsset(client alpaca.Client) (*alpaca.Asset, error) {
+	res, error := client.GetAsset("BTC")
+
+	if error != nil {
+		fmt.Printf("Failed to get asset data: %v\n", error)
+	} else {
+		fmt.Printf("Success, Asset Data: %v\n", res)
+	}
+
+	return res, nil
 }
