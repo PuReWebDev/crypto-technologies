@@ -125,12 +125,8 @@ func loadEnvironment() *gorm.DB {
 }
 
 func prepAlpaca() alpaca.Client {
-	// Instantiating new Alpaca paper trading client
-	// Alternatively, you can set your API key and secret using environment
-	// variables named APCA_API_KEY_ID and APCA_API_SECRET_KEY respectively
-	// Remove for live trading
-	apiKey := os.Getenv("apiKey")
-	apiSecret := os.Getenv("apiSecret")
+	apiKey := os.Getenv("APCA_API_KEY_ID")
+	apiSecret := os.Getenv("APCA_API_SECRET_KEY")
 	baseURL := os.Getenv("baseURL")
 
 	client := alpaca.NewClient(alpaca.ClientOpts{
