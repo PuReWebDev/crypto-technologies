@@ -170,7 +170,7 @@ type Order struct {
 func placeOrder(client alpaca.Client, db gorm.DB) (Order, error) {
 	symbol := "BTC/USD"
 	// qty := decimal.NewFromInt(1)
-	qty := decimal.NewFromFloat(0.000038)
+	qty := decimal.NewFromFloat(0.000038) // TODO: pass dynamic values
 	side := alpaca.Side("buy")
 	orderType := alpaca.OrderType("market")
 	timeInForce := alpaca.TimeInForce("gtc") // day & ioc
@@ -184,17 +184,19 @@ func placeOrder(client alpaca.Client, db gorm.DB) (Order, error) {
 		TimeInForce: timeInForce,
 	})
 
+	var order Order
+
 	if err != nil {
 		// Print error
 		fmt.Printf("Failed to place order: %v\n", err)
 	} else {
 		// Print resulting order object
 		fmt.Printf("Order succesfully sent:\n%+v\n", *orderResult)
+
+		order := formatOrder(orderResult)
+
+		saveOrder(order, db)
 	}
-
-	order := formatOrder(orderResult)
-
-	saveOrder(order, db)
 
 	return order, err
 }
