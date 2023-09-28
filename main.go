@@ -100,6 +100,7 @@ func main() {
 	client := prepAlpaca()
 
 	getAccount(client, *db)
+	placeOrder(client, *db)
 }
 
 func loadEnvironment() *gorm.DB {
@@ -117,7 +118,7 @@ func loadEnvironment() *gorm.DB {
 	}
 
 	// Migrate the schema
-	db.AutoMigrate(&Account{})
+	db.AutoMigrate(&Account{}, &Order{})
 
 	return db
 }
@@ -144,32 +145,32 @@ type Order struct {
 	gorm.Model
 	OrderId        string
 	ClientOrderId  string
-	CreatedAt      string
-	UpdatedAt      string
-	SubmittedAt    string
-	FilledAt       string
-	ExpiredAt      string
-	CanceledAt     string
-	FailedAt       string
-	ReplacedAt     string
+	CreatedAt      time.Time
+	UpdatedAt      time.Time
+	SubmittedAt    time.Time
+	FilledAt       *time.Time
+	ExpiredAt      *time.Time
+	CanceledAt     *time.Time
+	FailedAt       *time.Time
+	ReplacedAt     *time.Time
 	ReplacedBy     string
 	Replaces       string
 	AssetId        string
 	Symbol         string
 	AssetClass     string
-	Notional       string
-	Qty            string
-	FilledQty      string
-	FilledAvgPrice string
+	Notional       *decimal.Decimal
+	Qty            *decimal.Decimal
+	FilledQty      decimal.Decimal
+	FilledAvgPrice *decimal.Decimal
 	OrderType      string
 	Type           string
 	Side           string
 	TimeInForce    string
-	LimitPrice     string
+	LimitPrice     *decimal.Decimal
 	Status         string
 }
 
-func placeOrder(client alpaca.Client, db gorm.DB) (alpaca.Order, error) {
+func placeOrder(client alpaca.Client, db gorm.DB) (Order, error) {
 	symbol := "BTC/USD"
 	qty := decimal.NewFromInt(1)
 	side := alpaca.Side("buy")
@@ -177,20 +178,61 @@ func placeOrder(client alpaca.Client, db gorm.DB) (alpaca.Order, error) {
 	timeInForce := alpaca.TimeInForce("day")
 
 	// Placing an order with the parameters set previously
-	order, err := client.PlaceOrder(alpaca.PlaceOrderRequest{
+	orderResult, err := client.PlaceOrder(alpaca.PlaceOrderRequest{
 		AssetKey:    &symbol,
 		Qty:         &qty,
 		Side:        side,
 		Type:        orderType,
 		TimeInForce: timeInForce,
 	})
+
+	order := formatOrder(orderResult)
+
+	_, err = saveOrder(order, db)
+
 	if err != nil {
 		// Print error
 		fmt.Printf("Failed to place order: %v\n", err)
 	} else {
 		// Print resulting order object
-		fmt.Printf("Order succesfully sent:\n%+v\n", *order)
+		fmt.Printf("Order succesfully sent:\n%+v\n", *orderResult)
 	}
 
-	return *order, err
+	return order, err
+}
+
+func formatOrder(orderResult *alpaca.Order) Order {
+	order := Order{
+		OrderId:        orderResult.ID,
+		ClientOrderId:  orderResult.ClientOrderID,
+		CreatedAt:      orderResult.CreatedAt,
+		UpdatedAt:      orderResult.UpdatedAt,
+		SubmittedAt:    orderResult.SubmittedAt,
+		FilledAt:       orderResult.FilledAt,
+		ExpiredAt:      orderResult.ExpiredAt,
+		CanceledAt:     orderResult.CanceledAt,
+		FailedAt:       orderResult.FilledAt,
+		ReplacedAt:     orderResult.ReplacedAt,
+		ReplacedBy:     *orderResult.ReplacedBy,
+		Replaces:       *orderResult.Replaces,
+		AssetId:        orderResult.AssetID,
+		Symbol:         orderResult.Symbol,
+		AssetClass:     string(orderResult.OrderClass),
+		Notional:       orderResult.Notional,
+		Qty:            orderResult.Qty,
+		FilledQty:      orderResult.FilledQty,
+		FilledAvgPrice: orderResult.FilledAvgPrice,
+		OrderType:      string(orderResult.Type),
+		Type:           string(orderResult.Type),
+		Side:           string(orderResult.Side),
+		TimeInForce:    string(orderResult.TimeInForce),
+		LimitPrice:     orderResult.LimitPrice,
+		Status:         orderResult.Status,
+	}
+	return order
+}
+
+func saveOrder(order Order, db gorm.DB) (*gorm.DB, error) {
+	// FirstOrCreate
+	return db.Where(Order{OrderId: order.OrderId}).FirstOrCreate(&order), nil
 }
