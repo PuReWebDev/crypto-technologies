@@ -188,7 +188,7 @@ func placeOrder(client alpaca.Client, db gorm.DB) (Order, error) {
 
 	order := formatOrder(orderResult)
 
-	_, err = saveOrder(order, db)
+	saveOrder(order, db)
 
 	if err != nil {
 		// Print error
