@@ -172,10 +172,11 @@ type Order struct {
 
 func placeOrder(client alpaca.Client, db gorm.DB) (Order, error) {
 	symbol := "BTC/USD"
-	qty := decimal.NewFromInt(1)
+	// qty := decimal.NewFromInt(1)
+	qty := decimal.NewFromFloat(0.000038)
 	side := alpaca.Side("buy")
 	orderType := alpaca.OrderType("market")
-	timeInForce := alpaca.TimeInForce("day")
+	timeInForce := alpaca.TimeInForce("gtc") // day & ioc
 
 	// Placing an order with the parameters set previously
 	orderResult, err := client.PlaceOrder(alpaca.PlaceOrderRequest{
@@ -186,10 +187,6 @@ func placeOrder(client alpaca.Client, db gorm.DB) (Order, error) {
 		TimeInForce: timeInForce,
 	})
 
-	order := formatOrder(orderResult)
-
-	saveOrder(order, db)
-
 	if err != nil {
 		// Print error
 		fmt.Printf("Failed to place order: %v\n", err)
@@ -198,10 +195,15 @@ func placeOrder(client alpaca.Client, db gorm.DB) (Order, error) {
 		fmt.Printf("Order succesfully sent:\n%+v\n", *orderResult)
 	}
 
+	order := formatOrder(orderResult)
+
+	saveOrder(order, db)
+
 	return order, err
 }
 
 func formatOrder(orderResult *alpaca.Order) Order {
+
 	order := Order{
 		OrderId:        orderResult.ID,
 		ClientOrderId:  orderResult.ClientOrderID,
@@ -213,8 +215,8 @@ func formatOrder(orderResult *alpaca.Order) Order {
 		CanceledAt:     orderResult.CanceledAt,
 		FailedAt:       orderResult.FilledAt,
 		ReplacedAt:     orderResult.ReplacedAt,
-		ReplacedBy:     *orderResult.ReplacedBy,
-		Replaces:       *orderResult.Replaces,
+		ReplacedBy:     "",
+		Replaces:       "",
 		AssetId:        orderResult.AssetID,
 		Symbol:         orderResult.Symbol,
 		AssetClass:     string(orderResult.OrderClass),
