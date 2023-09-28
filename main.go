@@ -101,6 +101,7 @@ func main() {
 
 	getAccount(client, *db)
 	placeOrder(client, *db)
+	listPositions(client, *db)
 }
 
 func loadEnvironment() *gorm.DB {
@@ -231,10 +232,25 @@ func formatOrder(orderResult *alpaca.Order) Order {
 		LimitPrice:     orderResult.LimitPrice,
 		Status:         orderResult.Status,
 	}
+
 	return order
 }
 
 func saveOrder(order Order, db gorm.DB) (*gorm.DB, error) {
 	// FirstOrCreate
 	return db.Where(Order{OrderId: order.OrderId}).FirstOrCreate(&order), nil
+}
+
+func listPositions(client alpaca.Client, db gorm.DB) {
+	// Get open positions
+	positions, err := client.ListPositions()
+	if err != nil {
+		// Print error
+		fmt.Printf("Failed to get open positions: %v\n", err)
+	} else {
+		// Print every position with its index
+		for idx, position := range positions {
+			fmt.Printf("Position %v: %+v\n", idx, position)
+		}
+	}
 }
