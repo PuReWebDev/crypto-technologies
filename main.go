@@ -7,16 +7,14 @@ import (
 	"os"
 	"time"
 
-	"github.com/alpacahq/alpaca-trade-api-go/v2/alpaca"
-	// "github.com/alpacahq/alpaca-trade-api-go/v3/alpaca"
-
+	"github.com/alpacahq/alpaca-trade-api-go/v3/alpaca"
 	"github.com/joho/godotenv"
 	"github.com/shopspring/decimal"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
 )
 
-func getAccount(client alpaca.Client, db gorm.DB) {
+func getAccount(client *alpaca.Client, db gorm.DB) {
 	// Get account information
 	acct, err := client.GetAccount()
 
@@ -73,21 +71,21 @@ func loadEnvironment() *gorm.DB {
 	return db
 }
 
-func prepAlpaca() alpaca.Client {
+func prepAlpaca() *alpaca.Client {
 	apiKey := os.Getenv("APCA_API_KEY_ID")
 	apiSecret := os.Getenv("APCA_API_SECRET_KEY")
 	baseURL := os.Getenv("baseURL")
 
 	client := alpaca.NewClient(alpaca.ClientOpts{
-		ApiKey:    apiKey,
-		ApiSecret: apiSecret,
+		APIKey:    apiKey,
+		APISecret: apiSecret,
 		BaseURL:   baseURL,
 	})
 
 	return client
 }
 
-func placeOrder(client alpaca.Client, db gorm.DB) (types.Order, error) {
+func placeOrder(client *alpaca.Client, db gorm.DB) (types.Order, error) {
 	symbol := "BTC/USD"
 	// qty := decimal.NewFromInt(1)
 	qty := decimal.NewFromFloat(0.000038) // TODO: pass dynamic values
@@ -97,7 +95,7 @@ func placeOrder(client alpaca.Client, db gorm.DB) (types.Order, error) {
 
 	// Placing an order with the parameters set previously
 	orderResult, err := client.PlaceOrder(alpaca.PlaceOrderRequest{
-		AssetKey:    &symbol,
+		Symbol:      symbol,
 		Qty:         &qty,
 		Side:        side,
 		Type:        orderType,
@@ -176,7 +174,7 @@ func buildAccount(acct *alpaca.Account) (types.Account, error) {
 		LongMarketValue:       acct.LongMarketValue,
 		InitialMargin:         acct.InitialMargin,
 		MaintenanceMargin:     acct.MaintenanceMargin,
-		CashWithdrawable:      acct.CashWithdrawable,
+		CryptoStatus:          acct.CryptoStatus,
 		DaytradeCount:         acct.DaytradeCount,
 		LastMaintenanceMargin: acct.LastMaintenanceMargin,
 		DaytradingBuyingPower: acct.DaytradingBuyingPower,
@@ -193,22 +191,20 @@ func saveOrder(order types.Order, db gorm.DB) (*gorm.DB, error) {
 	return db.Where(types.Order{OrderId: order.OrderId}).FirstOrCreate(&order), nil
 }
 
-func listPositions(client alpaca.Client, db gorm.DB) {
+func listPositions(client *alpaca.Client, db gorm.DB) {
 	// Get the last 100 of our closed orders
 	status := "closed"
 	limit := 100
 	nested := true // show nested multi-leg orders
-	closed_orders, err := alpaca.ListOrders(&status, nil, &limit, &nested)
-	if err != nil {
-		panic(err)
+
+	var orderRequest alpaca.GetOrdersRequest = alpaca.GetOrdersRequest{
+		Status: status,
+		Limit:  limit,
+		Nested: nested,
 	}
 
-	if closed_orders != nil {
-		fmt.Printf("closed orders: %v", closed_orders)
-	}
+	positions, err := alpaca.GetOrders(orderRequest)
 
-	// Get open positions
-	positions, err := client.ListPositions()
 	if err != nil {
 		// Print error
 		fmt.Printf("Failed to get open positions: %v\n", err)
@@ -220,7 +216,7 @@ func listPositions(client alpaca.Client, db gorm.DB) {
 	}
 }
 
-func getAsset(client alpaca.Client) (*alpaca.Asset, error) {
+func getAsset(client *alpaca.Client) (*alpaca.Asset, error) {
 	res, error := client.GetAsset("BTC")
 
 	if error != nil {
