@@ -1,81 +1,61 @@
 package main
 
 import (
+	"crypto-technologies/types"
 	"fmt"
 	"log"
 	"os"
 	"time"
 
 	"github.com/alpacahq/alpaca-trade-api-go/v2/alpaca"
+	// "github.com/alpacahq/alpaca-trade-api-go/v3/alpaca"
+
 	"github.com/joho/godotenv"
 	"github.com/shopspring/decimal"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
 )
 
-type Account struct {
-	gorm.Model
-	ID                    uint
-	AccountID             string
-	AccountBlocked        bool
-	AccountNumber         string
-	crypto_status         string
-	currency              string
-	cash                  decimal.Decimal
-	PortfolioValue        decimal.Decimal
-	PatternDayTrader      bool
-	TradingBlocked        bool
-	TransfersBlocked      bool
-	ShortMarketValue      decimal.Decimal
-	Equity                decimal.Decimal
-	LastEquity            decimal.Decimal
-	Multiplier            string
-	BuyingPower           decimal.Decimal
-	ShortingEnabled       bool
-	LongMarketValue       decimal.Decimal
-	InitialMargin         decimal.Decimal
-	MaintenanceMargin     decimal.Decimal
-	CashWithdrawable      decimal.Decimal
-	DaytradeCount         int64
-	LastMaintenanceMargin decimal.Decimal
-	DaytradingBuyingPower decimal.Decimal
-	RegtBuyingPower       decimal.Decimal
-	CreatedAt             time.Time
-	UpdatedAt             time.Time
-	DeletedAt             gorm.DeletedAt
-}
+// type Account struct {
+// 	gorm.Model
+// 	ID                    uint
+// 	AccountID             string
+// 	AccountBlocked        bool
+// 	AccountNumber         string
+// 	crypto_status         string
+// 	currency              string
+// 	cash                  decimal.Decimal
+// 	PortfolioValue        decimal.Decimal
+// 	PatternDayTrader      bool
+// 	TradingBlocked        bool
+// 	TransfersBlocked      bool
+// 	ShortMarketValue      decimal.Decimal
+// 	Equity                decimal.Decimal
+// 	LastEquity            decimal.Decimal
+// 	Multiplier            string
+// 	BuyingPower           decimal.Decimal
+// 	ShortingEnabled       bool
+// 	LongMarketValue       decimal.Decimal
+// 	InitialMargin         decimal.Decimal
+// 	MaintenanceMargin     decimal.Decimal
+// 	CashWithdrawable      decimal.Decimal
+// 	DaytradeCount         int64
+// 	LastMaintenanceMargin decimal.Decimal
+// 	DaytradingBuyingPower decimal.Decimal
+// 	RegtBuyingPower       decimal.Decimal
+// 	CreatedAt             time.Time
+// 	UpdatedAt             time.Time
+// 	DeletedAt             gorm.DeletedAt
+// }
 
 func getAccount(client alpaca.Client, db gorm.DB) {
 	// Get account information
 	acct, err := client.GetAccount()
 
-	var account Account = Account{
-		AccountID:             acct.ID,
-		AccountBlocked:        acct.AccountBlocked,
-		AccountNumber:         acct.AccountNumber,
-		PortfolioValue:        acct.PortfolioValue,
-		crypto_status:         acct.Status,
-		currency:              acct.Currency,
-		cash:                  acct.Cash,
-		PatternDayTrader:      acct.PatternDayTrader,
-		TradingBlocked:        acct.TradingBlocked,
-		TransfersBlocked:      acct.TransfersBlocked,
-		ShortMarketValue:      acct.ShortMarketValue,
-		Equity:                acct.Equity,
-		LastEquity:            acct.LastEquity,
-		Multiplier:            acct.Multiplier,
-		BuyingPower:           acct.BuyingPower,
-		ShortingEnabled:       acct.ShortingEnabled,
-		LongMarketValue:       acct.LongMarketValue,
-		InitialMargin:         acct.InitialMargin,
-		MaintenanceMargin:     acct.MaintenanceMargin,
-		CashWithdrawable:      acct.CashWithdrawable,
-		DaytradeCount:         acct.DaytradeCount,
-		LastMaintenanceMargin: acct.LastMaintenanceMargin,
-		DaytradingBuyingPower: acct.DaytradingBuyingPower,
-		RegtBuyingPower:       acct.RegTBuyingPower,
-		CreatedAt:             acct.CreatedAt,
-		UpdatedAt:             time.Now(),
+	account, error := buildAccount(acct)
+
+	if error != nil {
+		fmt.Printf("Error: not able to build the account: %v\n", error)
 	}
 
 	if err != nil {
@@ -87,7 +67,7 @@ func getAccount(client alpaca.Client, db gorm.DB) {
 		fmt.Printf("Account: %+v\n", *acct)
 
 		// FirstOrCreate
-		result := db.Where(Account{AccountID: account.AccountID}).FirstOrCreate(&account)
+		result := db.Where(types.Account{AccountID: account.AccountID}).FirstOrCreate(&account)
 
 		fmt.Printf("Query Result: %+v\n", result)
 	}
@@ -120,7 +100,7 @@ func loadEnvironment() *gorm.DB {
 	}
 
 	// Migrate the schema
-	db.AutoMigrate(&Account{}, &Order{})
+	db.AutoMigrate(&types.Account{}, &Order{})
 
 	return db
 }
@@ -235,12 +215,59 @@ func formatOrder(orderResult *alpaca.Order) Order {
 	return order
 }
 
+func buildAccount(acct *alpaca.Account) (types.Account, error) {
+
+	var account types.Account = types.Account{
+		AccountID:             acct.ID,
+		AccountBlocked:        acct.AccountBlocked,
+		AccountNumber:         acct.AccountNumber,
+		PortfolioValue:        acct.PortfolioValue,
+		Status:                acct.Status,
+		Currency:              acct.Currency,
+		Cash:                  acct.Cash,
+		PatternDayTrader:      acct.PatternDayTrader,
+		TradingBlocked:        acct.TradingBlocked,
+		TransfersBlocked:      acct.TransfersBlocked,
+		ShortMarketValue:      acct.ShortMarketValue,
+		Equity:                acct.Equity,
+		LastEquity:            acct.LastEquity,
+		Multiplier:            acct.Multiplier,
+		BuyingPower:           acct.BuyingPower,
+		ShortingEnabled:       acct.ShortingEnabled,
+		LongMarketValue:       acct.LongMarketValue,
+		InitialMargin:         acct.InitialMargin,
+		MaintenanceMargin:     acct.MaintenanceMargin,
+		CashWithdrawable:      acct.CashWithdrawable,
+		DaytradeCount:         acct.DaytradeCount,
+		LastMaintenanceMargin: acct.LastMaintenanceMargin,
+		DaytradingBuyingPower: acct.DaytradingBuyingPower,
+		RegtBuyingPower:       acct.RegTBuyingPower,
+		CreatedAt:             acct.CreatedAt,
+		UpdatedAt:             time.Now(),
+	}
+
+	return account, nil
+}
+
 func saveOrder(order Order, db gorm.DB) (*gorm.DB, error) {
 	// FirstOrCreate
 	return db.Where(Order{OrderId: order.OrderId}).FirstOrCreate(&order), nil
 }
 
 func listPositions(client alpaca.Client, db gorm.DB) {
+	// Get the last 100 of our closed orders
+	status := "closed"
+	limit := 100
+	nested := true // show nested multi-leg orders
+	closed_orders, err := alpaca.ListOrders(&status, nil, &limit, &nested)
+	if err != nil {
+		panic(err)
+	}
+
+	if closed_orders != nil {
+		fmt.Printf("closed orders: %v", closed_orders)
+	}
+
 	// Get open positions
 	positions, err := client.ListPositions()
 	if err != nil {
