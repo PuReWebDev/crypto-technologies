@@ -40,3 +40,32 @@ type Account struct {
 	UpdatedAt             time.Time
 	DeletedAt             gorm.DeletedAt
 }
+
+type Order struct {
+	gorm.Model
+	OrderId        string
+	ClientOrderId  string
+	CreatedAt      time.Time
+	UpdatedAt      time.Time
+	SubmittedAt    time.Time
+	FilledAt       *time.Time
+	ExpiredAt      *time.Time
+	CanceledAt     *time.Time
+	FailedAt       *time.Time
+	ReplacedAt     *time.Time
+	ReplacedBy     string
+	Replaces       string
+	AssetId        string
+	Symbol         string
+	AssetClass     string
+	Notional       *decimal.Decimal
+	Qty            *decimal.Decimal
+	FilledQty      decimal.Decimal
+	FilledAvgPrice *decimal.Decimal
+	OrderType      string
+	Type           string
+	Side           string
+	TimeInForce    string
+	LimitPrice     *decimal.Decimal
+	Status         string
+}

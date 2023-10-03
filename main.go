@@ -16,38 +16,6 @@ import (
 	"gorm.io/gorm"
 )
 
-// type Account struct {
-// 	gorm.Model
-// 	ID                    uint
-// 	AccountID             string
-// 	AccountBlocked        bool
-// 	AccountNumber         string
-// 	crypto_status         string
-// 	currency              string
-// 	cash                  decimal.Decimal
-// 	PortfolioValue        decimal.Decimal
-// 	PatternDayTrader      bool
-// 	TradingBlocked        bool
-// 	TransfersBlocked      bool
-// 	ShortMarketValue      decimal.Decimal
-// 	Equity                decimal.Decimal
-// 	LastEquity            decimal.Decimal
-// 	Multiplier            string
-// 	BuyingPower           decimal.Decimal
-// 	ShortingEnabled       bool
-// 	LongMarketValue       decimal.Decimal
-// 	InitialMargin         decimal.Decimal
-// 	MaintenanceMargin     decimal.Decimal
-// 	CashWithdrawable      decimal.Decimal
-// 	DaytradeCount         int64
-// 	LastMaintenanceMargin decimal.Decimal
-// 	DaytradingBuyingPower decimal.Decimal
-// 	RegtBuyingPower       decimal.Decimal
-// 	CreatedAt             time.Time
-// 	UpdatedAt             time.Time
-// 	DeletedAt             gorm.DeletedAt
-// }
-
 func getAccount(client alpaca.Client, db gorm.DB) {
 	// Get account information
 	acct, err := client.GetAccount()
@@ -100,7 +68,7 @@ func loadEnvironment() *gorm.DB {
 	}
 
 	// Migrate the schema
-	db.AutoMigrate(&types.Account{}, &Order{})
+	db.AutoMigrate(&types.Account{}, &types.Order{})
 
 	return db
 }
@@ -119,36 +87,7 @@ func prepAlpaca() alpaca.Client {
 	return client
 }
 
-type Order struct {
-	gorm.Model
-	OrderId        string
-	ClientOrderId  string
-	CreatedAt      time.Time
-	UpdatedAt      time.Time
-	SubmittedAt    time.Time
-	FilledAt       *time.Time
-	ExpiredAt      *time.Time
-	CanceledAt     *time.Time
-	FailedAt       *time.Time
-	ReplacedAt     *time.Time
-	ReplacedBy     string
-	Replaces       string
-	AssetId        string
-	Symbol         string
-	AssetClass     string
-	Notional       *decimal.Decimal
-	Qty            *decimal.Decimal
-	FilledQty      decimal.Decimal
-	FilledAvgPrice *decimal.Decimal
-	OrderType      string
-	Type           string
-	Side           string
-	TimeInForce    string
-	LimitPrice     *decimal.Decimal
-	Status         string
-}
-
-func placeOrder(client alpaca.Client, db gorm.DB) (Order, error) {
+func placeOrder(client alpaca.Client, db gorm.DB) (types.Order, error) {
 	symbol := "BTC/USD"
 	// qty := decimal.NewFromInt(1)
 	qty := decimal.NewFromFloat(0.000038) // TODO: pass dynamic values
@@ -165,7 +104,7 @@ func placeOrder(client alpaca.Client, db gorm.DB) (Order, error) {
 		TimeInForce: timeInForce,
 	})
 
-	var order Order
+	var order types.Order
 
 	if err != nil {
 		// Print error
@@ -182,9 +121,9 @@ func placeOrder(client alpaca.Client, db gorm.DB) (Order, error) {
 	return order, err
 }
 
-func formatOrder(orderResult *alpaca.Order) Order {
+func formatOrder(orderResult *alpaca.Order) types.Order {
 
-	order := Order{
+	order := types.Order{
 		OrderId:        orderResult.ID,
 		ClientOrderId:  orderResult.ClientOrderID,
 		CreatedAt:      orderResult.CreatedAt,
@@ -249,9 +188,9 @@ func buildAccount(acct *alpaca.Account) (types.Account, error) {
 	return account, nil
 }
 
-func saveOrder(order Order, db gorm.DB) (*gorm.DB, error) {
+func saveOrder(order types.Order, db gorm.DB) (*gorm.DB, error) {
 	// FirstOrCreate
-	return db.Where(Order{OrderId: order.OrderId}).FirstOrCreate(&order), nil
+	return db.Where(types.Order{OrderId: order.OrderId}).FirstOrCreate(&order), nil
 }
 
 func listPositions(client alpaca.Client, db gorm.DB) {
