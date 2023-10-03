@@ -25,13 +25,13 @@ type Account struct {
 	ShortMarketValue      decimal.Decimal
 	Equity                decimal.Decimal
 	LastEquity            decimal.Decimal
-	Multiplier            string
+	Multiplier            decimal.Decimal
 	BuyingPower           decimal.Decimal
 	ShortingEnabled       bool
 	LongMarketValue       decimal.Decimal
 	InitialMargin         decimal.Decimal
 	MaintenanceMargin     decimal.Decimal
-	CashWithdrawable      decimal.Decimal
+	CryptoStatus          string
 	DaytradeCount         int64
 	LastMaintenanceMargin decimal.Decimal
 	DaytradingBuyingPower decimal.Decimal
