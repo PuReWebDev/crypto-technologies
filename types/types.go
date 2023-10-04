@@ -9,6 +9,7 @@ import (
 	"gorm.io/gorm"
 )
 
+// Account is a struct to populate the Alpaca account type.
 type Account struct {
 	gorm.Model
 	ID                    uint
