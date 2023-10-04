@@ -3,8 +3,6 @@ package types
 import (
 	"time"
 
-	// "github.com/alpacahq/alpaca-trade-api-go/v3/alpaca"
-
 	"github.com/shopspring/decimal"
 	"gorm.io/gorm"
 )
