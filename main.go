@@ -87,8 +87,19 @@ func prepAlpaca() *alpaca.Client {
 
 func placeOrder(client *alpaca.Client, db gorm.DB) (types.Order, error) {
 	symbol := "BTC/USD"
-	// qty := decimal.NewFromInt(1)
 	qty := decimal.NewFromFloat(0.000038) // TODO: pass dynamic values
+	tenCents := decimal.NewFromFloat(0.0000036)
+	tpp := qty.Add(tenCents)
+	spp := qty.Sub(tenCents.Mul(decimal.NewFromInt(2)))
+	// limit := decimal.NewFromFloat(318.)
+	tp := &alpaca.TakeProfit{LimitPrice: &tpp}
+	sl := &alpaca.StopLoss{
+		LimitPrice: nil,
+		StopPrice:  &spp,
+	}
+
+	// qty := decimal.NewFromInt(1)
+
 	side := alpaca.Side("buy")
 	orderType := alpaca.OrderType("market")
 	timeInForce := alpaca.TimeInForce("gtc") // day & ioc
@@ -100,6 +111,9 @@ func placeOrder(client *alpaca.Client, db gorm.DB) (types.Order, error) {
 		Side:        side,
 		Type:        orderType,
 		TimeInForce: timeInForce,
+		OrderClass:  alpaca.Bracket,
+		TakeProfit:  tp,
+		StopLoss:    sl,
 	})
 
 	var order types.Order
