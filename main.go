@@ -112,9 +112,9 @@ func listenForTrades() {
 	c := stream.NewStocksClient(
 		marketdata.IEX,
 		// configuring initial subscriptions and handlers
-		stream.WithTrades(tradeHandler, "SPY"),
-		stream.WithQuotes(quoteHandler, "AAPL", "SPY"),
-		stream.WithBars(barHandler, "AAPL", "SPY"),
+		stream.WithTrades(tradeHandler, "BTC/USD"),
+		stream.WithQuotes(quoteHandler, "BTC/USD", "ETH/USD"),
+		stream.WithBars(barHandler, "BTC/USD", "ETH/USD"),
 		// use stream.WithDailyBars to subscribe to daily bars too
 		// use stream.WithCredentials to manually override envvars
 		// use stream.WithHost to manually override envvar
@@ -148,18 +148,18 @@ func listenForTrades() {
 	}()
 
 	time.Sleep(3 * time.Second)
-	// Adding AAPL trade subscription
-	if err := c.SubscribeToTrades(tradeHandler, "AAPL"); err != nil {
+	// Adding BTC/USD trade subscription
+	if err := c.SubscribeToTrades(tradeHandler, "BTC/USD"); err != nil {
 		log.Fatalf("error during subscribing: %s", err)
 	}
-	fmt.Println("subscribed to AAPL trades")
+	fmt.Println("subscribed to BTC/USD trades")
 
 	time.Sleep(3 * time.Second)
-	// Unsubscribing from AAPL quotes
-	if err := c.UnsubscribeFromQuotes("AAPL"); err != nil {
+	// Unsubscribing from BTC/USD quotes
+	if err := c.UnsubscribeFromQuotes("BTC/USD"); err != nil {
 		log.Fatalf("error during unsubscribing: %s", err)
 	}
-	fmt.Println("unsubscribed from AAPL quotes")
+	fmt.Println("unsubscribed from BTC/USD quotes")
 
 	// and so on...
 	time.Sleep(100 * time.Second)
