@@ -54,11 +54,11 @@ func main() {
 	placeOrder(client, *db)
 	listPositions(client, *db)
 	getAsset(client)
-	listenForMarket()
+	listenForMarket(db)
 	listenForTrades()
 }
 
-func listenForMarket() {
+func listenForMarket(db *gorm.DB) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
@@ -71,6 +71,13 @@ func listenForMarket() {
 		}, "*"),
 		stream.WithCryptoQuotes(func(cq stream.CryptoQuote) {
 			fmt.Printf("QUOTE: %+v\n", cq)
+
+			rowsInserted, err := saveCryptoQuote(cq, *db)
+
+			if rowsInserted != 1 || err != nil {
+				panic(err)
+			}
+
 		}, "BTC/USD"),
 		stream.WithCryptoOrderbooks(func(cob stream.CryptoOrderbook) {
 			fmt.Printf("ORDERBOOK: %+v\n", cob)
@@ -318,6 +325,22 @@ func buildAccount(acct *alpaca.Account) (types.Account, error) {
 func saveOrder(order types.Order, db gorm.DB) (*gorm.DB, error) {
 	// FirstOrCreate
 	return db.Where(types.Order{OrderId: order.OrderId}).FirstOrCreate(&order), nil
+}
+
+func saveCryptoQuote(marketQuote stream.CryptoQuote, db gorm.DB) (int64, error) {
+	//types.CryptoQuote
+	var cryptoQuote types.CryptoQuote = types.CryptoQuote{
+		Symbol:    marketQuote.Symbol,
+		Exchange:  marketQuote.Exchange,
+		BidPrice:  marketQuote.BidPrice,
+		BidSize:   marketQuote.BidSize,
+		AskPrice:  marketQuote.AskPrice,
+		AskSize:   marketQuote.AskSize,
+		Timestamp: marketQuote.Timestamp,
+	}
+
+	result := db.Create(&cryptoQuote)
+	return result.RowsAffected, result.Error
 }
 
 func listPositions(client *alpaca.Client, db gorm.DB) {
