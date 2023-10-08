@@ -130,3 +130,14 @@ type Position struct {
 	LastdayPrice   *decimal.Decimal `json:"lastday_price"`
 	ChangeToday    *decimal.Decimal `json:"change_today"`
 }
+
+type CryptoQuote struct {
+	gorm.Model
+	Symbol    string
+	Exchange  string
+	BidPrice  float64
+	BidSize   float64
+	AskPrice  float64
+	AskSize   float64
+	Timestamp time.Time
+}
