@@ -355,7 +355,7 @@ func listPositions(client *alpaca.Client, db gorm.DB) {
 		Nested: nested,
 	}
 
-	positions, err := alpaca.GetOrders(orderRequest)
+	positions, err := client.GetOrders(orderRequest)
 
 	if err != nil {
 		// Print error
