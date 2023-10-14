@@ -141,3 +141,11 @@ type CryptoQuote struct {
 	AskSize   float64
 	Timestamp time.Time
 }
+
+type BtcPrice struct {
+	gorm.Model
+	Type    string    `json:"type"`
+	Time    time.Time `json:"time"`
+	Product string    `json:"product_id"`
+	Price   string    `json:"price"`
+}
