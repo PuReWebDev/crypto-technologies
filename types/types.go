@@ -52,8 +52,8 @@ type Order struct {
 	CanceledAt     *time.Time
 	FailedAt       *time.Time
 	ReplacedAt     *time.Time
-	ReplacedBy     string
-	Replaces       string
+	ReplacedBy     *string
+	Replaces       *string
 	AssetId        string
 	Symbol         string
 	AssetClass     string
