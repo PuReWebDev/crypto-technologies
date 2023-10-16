@@ -2,11 +2,13 @@ package main
 
 import (
 	"context"
+	"crypto-technologies/btcPrice"
 	"crypto-technologies/types"
 	"fmt"
 	"log"
 	"os"
 	"os/signal"
+	"sync"
 	"sync/atomic"
 	"time"
 
@@ -46,16 +48,23 @@ func getAccount(client *alpaca.Client, db gorm.DB) {
 
 func main() {
 
+	// Create a new WaitGroup instance.
+	wg := sync.WaitGroup{}
+	wg.Add(1)
+
 	db := loadEnvironment()
 
 	client := prepAlpaca()
 
 	getAccount(client, *db)
+	go btcPrice.GetBtcPrice(*db)
+	time.Sleep(5 * time.Second)
 	placeOrder(client, *db)
 	listPositions(client, *db)
-	getAsset(client)
-	listenForMarket(db)
-	listenForTrades()
+	// getAsset(client)
+	// listenForMarket(db)
+	// listenForTrades()
+	wg.Wait()
 }
 
 func listenForMarket(db *gorm.DB) {
@@ -188,7 +197,7 @@ func loadEnvironment() *gorm.DB {
 	}
 
 	// Migrate the schema
-	db.AutoMigrate(&types.Account{}, &types.Order{}, &types.CryptoQuote{})
+	db.AutoMigrate(&types.Account{}, &types.Order{}, &types.CryptoQuote{}, &types.BtcPrice{})
 
 	return db
 }
@@ -209,19 +218,24 @@ func prepAlpaca() *alpaca.Client {
 
 func placeOrder(client *alpaca.Client, db gorm.DB) (types.Order, error) {
 	symbol := "BTC/USD"
-	qty := decimal.NewFromFloat(0.000038) // TODO: pass dynamic values
-	tenCents := decimal.NewFromFloat(0.0000036)
-	tpp := qty.Add(tenCents)
-	spp := qty.Sub(tenCents.Mul(decimal.NewFromInt(2)))
-	// limit := decimal.NewFromFloat(318.)
-	tp := &alpaca.TakeProfit{LimitPrice: &tpp}
-	sl := &alpaca.StopLoss{
-		LimitPrice: nil,
-		StopPrice:  &spp,
+	var btcPrice types.BtcPrice
+	db.Last(&btcPrice)
+	oneBtc, err := decimal.NewFromString("1.00000000")
+
+	if err != nil {
+		panic(err)
 	}
 
-	// qty := decimal.NewFromInt(1)
+	priceInDollars, err := decimal.NewFromString(btcPrice.Price)
 
+	if err != nil {
+		panic(err)
+	}
+
+	dollarOfSats := oneBtc.Div(priceInDollars)
+
+	// qty := decimal.NewFromFloat(0.000038) // TODO: pass dynamic values
+	qty := dollarOfSats
 	side := alpaca.Side("buy")
 	orderType := alpaca.OrderType("market")
 	timeInForce := alpaca.TimeInForce("gtc") // day & ioc
@@ -233,9 +247,6 @@ func placeOrder(client *alpaca.Client, db gorm.DB) (types.Order, error) {
 		Side:        side,
 		Type:        orderType,
 		TimeInForce: timeInForce,
-		OrderClass:  alpaca.Bracket,
-		TakeProfit:  tp,
-		StopLoss:    sl,
 	})
 
 	var order types.Order
@@ -268,8 +279,8 @@ func formatOrder(orderResult *alpaca.Order) types.Order {
 		CanceledAt:     orderResult.CanceledAt,
 		FailedAt:       orderResult.FilledAt,
 		ReplacedAt:     orderResult.ReplacedAt,
-		ReplacedBy:     *orderResult.ReplacedBy,
-		Replaces:       *orderResult.Replaces,
+		ReplacedBy:     orderResult.ReplacedBy,
+		Replaces:       orderResult.Replaces,
 		AssetId:        orderResult.AssetID,
 		Symbol:         orderResult.Symbol,
 		AssetClass:     string(orderResult.OrderClass),
@@ -364,12 +375,15 @@ func listPositions(client *alpaca.Client, db gorm.DB) {
 		// Print every position with its index
 		for idx, position := range positions {
 			fmt.Printf("Position %v: %+v\n", idx, position)
+
+			order := formatOrder(&position)
+			saveOrder(order, db)
 		}
 	}
 }
 
 func getAsset(client *alpaca.Client) (*alpaca.Asset, error) {
-	res, error := client.GetAsset("BTC")
+	res, error := client.GetAsset("BTC/USD")
 
 	if error != nil {
 		fmt.Printf("Failed to get asset data: %v\n", error)
